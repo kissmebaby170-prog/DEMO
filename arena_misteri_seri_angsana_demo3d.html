@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Arena Cabaran — Misteri Seri Angsana | Demo 3D</title>
+<style>
+:root{--gold:#f8d77a;--ink:#16253b;--cream:#fff5d7}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#101d2c;color:white}
+#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:14px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.pill{pointer-events:auto;background:#10253bce;border:1px solid #f5d47a88;border-radius:14px;padding:9px 12px;box-shadow:0 5px 22px #0004;font-size:13px}
+.brand{font-weight:900;letter-spacing:.04em;color:var(--gold);text-shadow:0 2px 4px #000}.bottom{display:flex;justify-content:space-between;align-items:end;gap:12px}.help{max-width:360px;line-height:1.4}
+button{cursor:pointer;border:0;border-radius:12px;padding:11px 15px;font-weight:850;color:#1b2b40;background:linear-gradient(#ffe8a2,#e8ad43);box-shadow:0 4px 0 #98642b;pointer-events:auto}
+button.secondary{background:#fff4d9;color:#24334a;box-shadow:none;border:1px solid #e9c66e}
+#menu{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(90deg,#081626c9,#08162644,#08162688)}
+.panel{width:min(620px,95vw);padding:clamp(20px,4vw,40px);border:2px solid #f5d47a;border-radius:24px;background:linear-gradient(145deg,#18344feF,#10243cf5);box-shadow:0 20px 80px #0009;text-align:center}
+.kicker{letter-spacing:.22em;font-size:11px;font-weight:900;color:#ffe6a0}.panel h1{font-size:clamp(30px,6vw,58px);line-height:.98;margin:12px 0;color:#ffe5a0;text-shadow:0 4px 0 #875328,0 8px 20px #0008}.panel p{line-height:1.55;color:#f7efd8}.actions{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:20px}.small{font-size:12px;color:#e7d8b0!important}
+#notice{position:absolute;left:50%;top:80px;transform:translateX(-50%);background:#10253be8;border:1px solid #f5d47a;border-radius:14px;padding:10px 14px;max-width:90vw;text-align:center;display:none;pointer-events:none}
+@media(max-width:600px){#hud{padding:8px}.pill{font-size:11px;padding:8px}.bottom{align-items:end}.help{max-width:65%;font-size:11px}.panel h1{font-size:34px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud">
+ <div class="top">
+  <div class="pill"><div class="brand">ARENA CABARAN</div><div>MISTERI SERI ANGSANA</div></div>
+  <div class="pill" id="progress">DEMO 3D • 0/1 bangunan dipulihkan</div>
+ </div>
+ <div class="bottom">
+  <div class="pill help">🖱️ Seret untuk pusing kamera • Roda tetikus untuk zum<br>WASD / anak panah untuk bergerak • Sentuh dan seret pada telefon</div>
+  <div style="display:flex;gap:8px;pointer-events:auto"><button class="secondary" id="music">♫ Muzik: OFF</button><button id="reset">Mula semula</button></div>
+ </div>
+</div>
+<div id="notice"></div>
+<div id="menu">
+ <div class="panel">
+  <div class="kicker">PENGEMBARAAN WARISAN MELAYU</div>
+  <h1>ARENA CABARAN<br><span style="font-size:.68em">MISTERI SERI ANGSANA</span></h1>
+  <p>Manuskrip ajaib telah mengacau susunan Kampung Seri Angsana. Masuk ke dunia 3D, terokai rumah warisan dan pulihkan bangunan yang hilang!</p>
+  <div class="actions"><button id="start">MULA PENGEMBARAAN</button><button class="secondary" id="how">CARA BERMAIN</button></div>
+  <p class="small">Demo awal: satu kawasan 3D interaktif, kamera 360° dan satu misi pemulihan rumah. Belum versi penuh 15 misi.</p>
+ </div>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
+const host=document.getElementById('game');
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x9bd6e8); scene.fog=new THREE.Fog(0x9bd6e8,35,105);
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,180); camera.position.set(12,10,17);
+const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.12; host.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement); controls.target.set(0,2,0); controls.enableDamping=true; controls.maxPolarAngle=Math.PI*.48; controls.minDistance=7; controls.maxDistance=42;
+scene.add(new THREE.HemisphereLight(0xe2f7ff,0x6a5634,2.0));
+const sun=new THREE.DirectionalLight(0xffedc1,3.1); sun.position.set(-12,22,9); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;scene.add(sun);
+function mat(c,rough=.8,metal=0){return new THREE.MeshStandardMaterial({color:c,roughness:rough,metalness:metal})}
+const grass=mat(0x5eaa66), grass2=mat(0x78bd6e), wood=mat(0x9a5931), woodLight=mat(0xc9864b), darkWood=mat(0x603820), roof=mat(0x9d3f35), roof2=mat(0xc45a3f), cream=mat(0xf3dfad), gold=mat(0xf1c85e,.4,.2), water=mat(0x40b8d1,.25), leaf=mat(0x267e4c), leaf2=mat(0x4ba65a), stone=mat(0xb6b19c);
+function box(parent,w,h,d,material,x,y,z,cast=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;parent.add(m);return m}
+function cylinder(parent,rt,rb,h,material,x,y,z,seg=8){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+function roofHalf(parent,w,h,d,material,x,y,z,rotZ){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.rotation.z=rotZ;m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+const ground=box(scene,120,.25,120,grass,0,-.18,0,false);
+const lawn=new THREE.Mesh(new THREE.PlaneGeometry(120,120),grass2);lawn.rotation.x=-Math.PI/2;lawn.position.y=-.04;lawn.receiveShadow=true;scene.add(lawn);
+// curved-looking river made of joined smooth sections
+const riverMat=new THREE.MeshStandardMaterial({color:0x48bfd8,roughness:.22,metalness:.08});
+const river=new THREE.Mesh(new THREE.BoxGeometry(100,.08,5.3),riverMat);river.position.set(0,.03,-19);river.receiveShadow=true;scene.add(river);
+for(let i=-46;i<48;i+=3.2){const ripple=new THREE.Mesh(new THREE.BoxGeometry(1.2,.015,.045),mat(0xb2f4ed,.2));ripple.position.set(i,.09,-19+Math.sin(i*.25)*1.4);scene.add(ripple)}
+// path
+const path=box(scene,10,.12,48,mat(0xd9bb86),0,.02,5,false);path.rotation.y=.12;
+// bridge
+const bridge=new THREE.Group();scene.add(bridge);box(bridge,7,.38,5,woodLight,0,.55,-18);for(let x=-3;x<=3;x+=.6){box(bridge,.08,.08,4.9,darkWood,x,.78,-18)}for(const side of [-2.35,2.35]){box(bridge,.18,.75,5,darkWood,side,1.05,-18);for(let z=-20;z<=-16;z+=1){box(bridge,.22,.22,.22,gold,side,1.42,z)}}
+// detailed traditional Malay stilt house
+function makeHouse(parent,x,z,scale=1,colors={}){const g=new THREE.Group();g.position.set(x,0,z);g.scale.setScalar(scale);parent.add(g);
+ const wall=colors.wall||woodLight, r=colors.roof||roof;
+ // stone footings and stilts
+ for(const xx of [-2.5,2.5])for(const zz of [-1.8,1.8]){box(g,.6,.3,.6,stone,xx,.15,zz);box(g,.28,1.6,.28,darkWood,xx,.95,zz)}
+ // raised floor and veranda
+ box(g,6,.25,4.6,wood,0,1.8,0);box(g,6.4,.18,1.4,woodLight,0,1.85,2.45);
+ // stairs
+ for(let i=0;i<5;i++){box(g,1.25,.16,.35,woodLight,0,.35+i*.28,3.45-i*.42)}
+ // wall volume and panel strips
+ box(g,5.55,2.55,4.1,wall,0,3.15,0);
+ for(const xx of [-2.2,-1.1,0,1.1,2.2])box(g,.07,2.3,.08,darkWood,xx,3.15,2.08);
+ // front door
+ box(g,1.05,1.8,.12,darkWood,0,2.72,2.15);box(g,.78,1.55,.07,woodLight,0,2.72,2.23);
+ // door carved bands
+ for(const yy of [2.1,2.45,2.8,3.15,3.5])box(g,.72,.035,.025,gold,0,yy,2.28);
+ // windows and shutters front
+ for(const xx of [-1.75,1.75]){box(g,1.05,.95,.12,darkWood,xx,3.35,2.16);box(g,.82,.7,.08,mat(0x8ed9e7,.3),xx,3.36,2.23);for(let k=-2;k<=2;k++)box(g,.045,.76,.04,woodLight,xx+k*.16,3.36,2.3);box(g,1.05,.09,.16,wood,xx,3.82,2.2);box(g,1.05,.09,.16,wood,xx,2.88,2.2)}
+ // side windows
+ for(const zz of [-1.1,0,1.1]){box(g,.1,.82,.72,darkWood,2.82,3.25,zz);box(g,.08,.6,.52,mat(0x8ed9e7,.3),2.88,3.25,zz);for(let k=-1;k<=1;k++)box(g,.05,.64,.05,woodLight,2.93,3.25,zz+k*.15)}
+ // veranda balustrade with posts
+ for(const xx of [-2.7,-1.8,-.9,0,.9,1.8,2.7]){box(g,.11,.65,.11,darkWood,xx,2.25,3.03);cylinder(g,.09,.09,.09,gold,xx,2.62,3.03,8)}
+ box(g,6,.13,.13,woodLight,0,2.57,3.03);
+ // roof two sloping panels and ridge
+ roofHalf(g,3.7,.24,5.4,r,-1.05,5.05,0,-.43);roofHalf(g,3.7,.24,5.4,r,1.05,5.05,0,.43);
+ // roof cap and second layered eaves
+ box(g,1.1,.18,5.5,roof2,0,5.88,0);roofHalf(g,3.9,.16,5.6,roof2,-1.0,4.82,0,-.43);roofHalf(g,3.9,.16,5.6,roof2,1.0,4.82,0,.43);
+ // decorative fascia trim
+ for(const xx of [-2.75,2.75])box(g,.12,.18,5.2,gold,xx,4.55,0);
+ // roof finials
+ cylinder(g,.08,.22,.35,gold,0,6.03,0,8);
+ // carved floral medallion front
+ const med=new THREE.Mesh(new THREE.TorusGeometry(.28,.045,8,24),gold);med.position.set(0,4.0,2.18);g.add(med);
+ for(let a=0;a<8;a++){const pet=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),gold);pet.position.set(Math.cos(a*Math.PI/4)*.22,4+Math.sin(a*Math.PI/4)*.22,2.2);pet.scale.set(1,1,.35);g.add(pet)}
+ return g;
+}
+const mainHouse=makeHouse(scene,0,0,1);
+const targetRing=new THREE.Mesh(new THREE.TorusGeometry(4.3,.12,12,64),new THREE.MeshStandardMaterial({color:0xffd35e,emissive:0x9b5c00,emissiveIntensity:.7}));targetRing.rotation.x=Math.PI/2;targetRing.position.set(16,.15,2);scene.add(targetRing);
+const ghostHouse=makeHouse(scene,16,0,.82,{wall:mat(0xc7c3b2),roof:mat(0x8f918d)});ghostHouse.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.transparent=true;o.material.opacity=.32; o.material.depthWrite=false}});
+const ghostLabel=document.createElement('div');ghostLabel.style.cssText='position:absolute;left:50%;top:50%;pointer-events:none;display:none;color:#fff4bc;font-weight:900;text-shadow:0 2px 5px #000';ghostLabel.textContent='TAPAK PEMULIHAN';document.body.appendChild(ghostLabel);
+// village props
+function palm(x,z,s=1){const g=new THREE.Group();g.position.set(x,0,z);g.scale.setScalar(s);scene.add(g);cylinder(g,.22,.35,4,wood,x,2,0,7);const top=new THREE.Vector3(0,4,0);for(let i=0;i<8;i++){const a=i*Math.PI/4;const leafMesh=new THREE.Mesh(new THREE.ConeGeometry(.24,3.4,5),leaf);leafMesh.position.set(Math.cos(a)*1.25,4.15+Math.sin(i)*.16,Math.sin(a)*1.25);leafMesh.rotation.z=-Math.cos(a)*.85;leafMesh.rotation.x=Math.sin(a)*.85;g.add(leafMesh)}}
+for(const p of [[-10,-5,1.1],[10,-8,.9],[-15,8,1.2],[15,10,1],[-20,-15,1.3],[22,-12,1.2],[-23,6,1],[24,5,1.1]])palm(...p);
+function hut(x,z,s=1){const h=makeHouse(scene,x,z,s,{wall:mat(0xd6a26b),roof:mat(0x7d4238)});return h}
+hut(-12,1,.62);hut(12,3,.62);hut(-8,12,.48);hut(8,12,.48);
+// market awning
+for(let i=0;i<3;i++){box(scene,1.8,1.6,1.3,wood,-12+i*2,1,10);box(scene,2,.18,1.6,i%2?roof2:mat(0xf1dca3),-12+i*2,2,10);box(scene,.18,1.4,.18,darkWood,-12.8+i*2,1.2,10);box(scene,.18,1.4,.18,darkWood,-11.2+i*2,1.2,10)}
+// palace in background
+function palace(){const g=new THREE.Group();g.position.set(0,0,-10);scene.add(g);box(g,11,4,6,cream,0,2,0);box(g,13,.35,7,gold,0,4.05,0);box(g,7,2.5,4,mat(0xf0d9a5),0,5.2,0);for(const x of [-4,-2,0,2,4]){cylinder(g,.13,.18,4,gold,x,2,3.15,10);box(g,.55,1.2, .2,mat(0x63b6b1),x,2,3.15)}for(const x of [-3.2,0,3.2]){const dome=new THREE.Mesh(new THREE.SphereGeometry(1.2,16,12,0,Math.PI*2,0,Math.PI/2),gold);dome.position.set(x,6.45,0);g.add(dome);cylinder(g,.08,.08,.6,gold,x,7,0,8)}for(let x=-5;x<=5;x+=2.5){box(g,.35,1.6, .25,wood,x,4.9,2.2)}}
+palace();
+// flowers
+for(let i=0;i<75;i++){const x=(Math.random()-.5)*48,z=(Math.random()-.5)*38;if(Math.abs(z)<4&&Math.abs(x)<7)continue;const flower=cylinder(scene,.08,.11,.2,[mat(0xf4d4e4),mat(0xf7c75b),mat(0xf5f1df)][i%3],x,.13,z,6);flower.rotation.x=.2}
+// stylized player avatar built from shapes, intentionally original design
+const player=new THREE.Group();scene.add(player);player.position.set(0,0,7);
+const skin=mat(0xb8754d), shirt=mat(0xf5f0df), vest=mat(0x203d64), sash=mat(0xb83338), hair=mat(0x201c24), pants=mat(0x25334a);
+cylinder(player,.34,.38,1.05,pants,0,.9,0,8);box(player,.82,.85,.48,shirt,0,1.65,0);box(player,.88,.92,.22,vest,0,1.68,.3);box(player,.92,.14,.1,gold,0,1.95,.43);box(player,.9,.12,.12,gold,0,1.4,.43);box(player,.16,.75,.16,skin,-.54,1.55,0);box(player,.16,.75,.16,skin,.54,1.55,0);box(player,.19,.15,.35,skin,-.54,1.14,.05);box(player,.19,.15,.35,skin,.54,1.14,.05);box(player,.28,.75,.25,pants,-.22,.55,0);box(player,.28,.75,.25,pants,.22,.55,0);box(player,.42,.17,.55,woodLight,-.22,.17,.08);box(player,.42,.17,.55,woodLight,.22,.17,.08);const head=new THREE.Mesh(new THREE.SphereGeometry(.42,20,16),skin);head.position.set(0,2.45,.02);head.scale.set(.92,1.05,.9);head.castShadow=true;player.add(head);const haircap=new THREE.Mesh(new THREE.SphereGeometry(.43,16,10,0,Math.PI*2,0,Math.PI*.55),hair);haircap.position.set(0,2.65,0);player.add(haircap);for(let i=0;i<5;i++){const spike=new THREE.Mesh(new THREE.ConeGeometry(.12,.45,5),hair);spike.position.set(-.25+i*.12,2.99+(i%2)*.08,0);spike.rotation.z=(i-2)*-.15;player.add(spike)}box(player,.86,.12,.13,sash,0,2.73,.35);const eyeMat=mat(0x171a20);for(const x of [-.14,.14]){const eye=new THREE.Mesh(new THREE.SphereGeometry(.055,10,8),eyeMat);eye.position.set(x,2.48,.39);player.add(eye)}box(player,.09,.07,.12,skin,0,2.38,.42);
+// helper objects and interaction
+const notice=document.getElementById('notice');let noticeTimer;
+function say(t){notice.textContent=t;notice.style.display='block';clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.style.display='none',3600)}
+let running=false,restored=false,dragging=false,dragStart=null,selected=null;const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();let keys={};
+function pointer(e){const r=renderer.domElement.getBoundingClientRect();mouse.x=((e.clientX-r.left)/r.width)*2-1;mouse.y=-((e.clientY-r.top)/r.height)*2+1;ray.setFromCamera(mouse,camera)}
+renderer.domElement.addEventListener('pointerdown',e=>{pointer(e);const hits=ray.intersectObject(mainHouse,true);if(running&&hits.length){dragging=true;selected=mainHouse;controls.enabled=false;renderer.domElement.setPointerCapture(e.pointerId);say('Rumah dipilih! Seret ke tapak bercahaya di sebelah kanan.')}});
+renderer.domElement.addEventListener('pointermove',e=>{if(!dragging||!selected)return;pointer(e);const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);const point=new THREE.Vector3();ray.ray.intersectPlane(plane,point);if(point){selected.position.x=THREE.MathUtils.clamp(point.x,-9,20);selected.position.z=THREE.MathUtils.clamp(point.z,-4,14)}});
+renderer.domElement.addEventListener('pointerup',e=>{if(!dragging)return;dragging=false;controls.enabled=true;if(selected){if(selected.position.distanceTo(ghostHouse.position)<4.2){selected.position.set(16,0,0);selected.scale.setScalar(.82);ghostHouse.visible=false;restored=true;document.getElementById('progress').textContent='DEMO 3D • 1/1 bangunan dipulihkan';say('✨ Berjaya! Rumah warisan dipulihkan! Ini contoh satu misi 3D.');}else{say('Belum tepat! Seret rumah ke bulatan emas yang bercahaya.')}selected=null;}});
+const menu=document.getElementById('menu');document.getElementById('start').onclick=()=>{menu.style.display='none';running=true;say('Misi demo: pilih rumah utama dan seret ke tapak bercahaya.');controls.target.set(0,2,0)};
+document.getElementById('how').onclick=()=>say('Seret untuk pusing kamera. Klik dan seret rumah utama ke tapak bercahaya di sebelah kanan.');
+document.getElementById('reset').onclick=()=>{mainHouse.position.set(0,0,0);mainHouse.scale.setScalar(1);ghostHouse.visible=true;restored=false;document.getElementById('progress').textContent='DEMO 3D • 0/1 bangunan dipulihkan';menu.style.display='flex';running=false};
+let audioCtx=null,oscillators=[],musicOn=false;
+function stopMusic(){oscillators.forEach(o=>{try{o.stop()}catch(e){}});oscillators=[];musicOn=false;document.getElementById('music').textContent='♫ Muzik: OFF'}
+function startMusic(){try{audioCtx=audioCtx||new AudioContext();audioCtx.resume();musicOn=true;document.getElementById('music').textContent='♫ Muzik: ON';const notes=[392,494,587,659,587,494,440,523,659,784,659,587];let n=0;function note(){if(!musicOn)return;const o=audioCtx.createOscillator(),gain=audioCtx.createGain();o.type='triangle';o.frequency.value=notes[n%notes.length];gain.gain.setValueAtTime(.0001,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(.045,audioCtx.currentTime+.04);gain.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.28);o.connect(gain);gain.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.3);oscillators.push(o);n++;setTimeout(note,240)}note();say('Muzik demo dimainkan. Trek ini sintesis ringkas, bukan soundtrack berlesen.')}catch(e){say('Audio tidak disokong oleh browser ini.')}}document.getElementById('music').onclick=()=>musicOn?stopMusic():startMusic();
+window.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+function animate(){requestAnimationFrame(animate);if(running&&!dragging){let dx=0,dz=0;if(keys.w||keys.arrowup)dz-=.12;if(keys.s||keys.arrowdown)dz+=.12;if(keys.a||keys.arrowleft)dx-=.12;if(keys.d||keys.arrowright)dx+=.12;player.position.x+=dx;player.position.z+=dz;player.position.x=THREE.MathUtils.clamp(player.position.x,-24,24);player.position.z=THREE.MathUtils.clamp(player.position.z,-15,20);if(dx||dz)player.rotation.y=Math.atan2(dx,dz)}controls.update();renderer.render(scene,camera)}animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body></html>
